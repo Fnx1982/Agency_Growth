@@ -1,0 +1,198 @@
+<!-- Molina Growth: estrutura da página. Visual em css/style.css, lógica em js/app.js -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Molina Growth | Growth plans for local businesses</title>
+<meta name="description" content="Google Ads, Meta Ads and lead generation for local businesses in the UK and the US. Choose a plan and pay securely online.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:title" content="Molina Growth | Growth plans for local businesses">
+<meta property="og:description" content="Google Ads, Meta Ads and lead generation for local businesses in the UK and the US.">
+<meta property="og:image" content="/logo.png">
+<meta name="theme-color" content="#E3E3DF">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="logo" href="./"><img src="logo-header.png" width="720" height="185" alt="Molina Growth, UK and US"></a>
+    <div class="region" role="group" aria-label="Choose your country">
+      <button type="button" data-region="uk" aria-pressed="true">United Kingdom £</button>
+      <button type="button" data-region="us" aria-pressed="false">United States $</button>
+    </div>
+    <nav><a href="#compare">Compare plans</a><a href="#custom">Custom quote</a><a href="#contact">Contact us</a></nav>
+  </header>
+
+  <main>
+  <div class="hero">
+    <div class="intro">
+      <h1>More enquiries for your local business.</h1>
+      <p class="lead">We plan, run and report on your Google Ads and Meta Ads, so the people searching near you find you first. Pick a plan, pay securely here, and we’ll be in touch within one business day to set up your strategy.</p>
+    </div>
+      <ul class="facts">
+        <li><span>Your ad accounts stay yours</span><span>You keep full ownership and control</span></li>
+        <li><span>Ad spend is paid by you, directly</span><span>To Google or Meta, never through us</span></li>
+        <li><span>Longer plans cost less per month</span><span>Up to 20% off when paid upfront</span></li>
+      </ul>
+
+    <div class="config" aria-label="Build your plan">
+      <div class="seg plans" role="group" aria-label="Plan">
+        <button type="button" data-plan="starter" aria-pressed="false"><b>Starter</b><span>One ad platform</span></button>
+        <button type="button" data-plan="premium" aria-pressed="true"><b>Premium</b><span>Google + Meta + social</span></button>
+      </div>
+      <p class="cfg-label" id="len-label">Plan length, paid upfront</p>
+      <div class="seg months" role="group" aria-labelledby="len-label">
+        <button type="button" data-months="1" aria-pressed="false">1 mo</button>
+        <button type="button" data-months="2" aria-pressed="false">2 mo</button>
+        <button type="button" data-months="3" aria-pressed="false">3 mo</button>
+        <button type="button" data-months="6" aria-pressed="true">6 mo</button>
+        <button type="button" data-months="12" aria-pressed="false">12 mo</button>
+      </div>
+      <div class="price" aria-live="polite">
+        <div class="total" id="total">£0</div>
+        <p class="sub" id="sub"></p>
+        <div class="save"><div class="bar"><i id="bar"></i></div><p id="savetext"></p></div>
+      </div>
+      <ul class="incl" id="incl"></ul>
+      <button type="button" class="btn btn-light" id="paybtn">Pay</button>
+      <p class="secure"><svg width="12" height="14" viewBox="0 0 12 14" aria-hidden="true"><rect x="1" y="6" width="10" height="7.5" rx="1.5" fill="currentColor"/><path d="M3.2 6V4.2a2.8 2.8 0 0 1 5.6 0V6" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>Secure card payment, processed by Stripe</p>
+    </div>
+  </div>
+
+  <section class="block" id="compare">
+    <div class="head">
+      <h2>What each plan includes</h2>
+      <p class="lead">Starter suits a business that wants one channel done properly. Premium runs both ad platforms plus your social presence. Need something in between? Ask for a custom quote.</p>
+    </div>
+    <table class="compare">
+      <thead><tr><th scope="col">Service</th><th scope="col">Starter<small id="cmp-s"></small></th><th scope="col">Premium<small id="cmp-p"></small></th></tr></thead>
+      <tbody id="cmp-body"></tbody>
+    </table>
+  </section>
+
+  <section class="block">
+    <div class="head">
+      <h2>What happens after you pay</h2>
+      <p class="lead">Payment confirms your place. The strategy itself is built with you, not before you.</p>
+    </div>
+    <ol class="steps">
+      <li><h3>You get a receipt</h3><p>A confirmation email arrives straight away with your plan and amount.</p></li>
+      <li><h3>We contact you</h3><p>Within one business day we email or message you to book a kickoff call.</p></li>
+      <li><h3>Kickoff call</h3><p>We answer your questions, agree goals, budget, areas and the offer we’ll advertise.</p></li>
+      <li><h3>Campaigns go live</h3><p>You grant access to your ad accounts, we launch, and you get a report every month.</p></li>
+    </ol>
+  </section>
+
+  <section class="block" id="custom">
+    <div class="quote">
+      <div>
+        <h2>Build a custom plan</h2>
+        <p class="lead gap">Choose only the services your business needs. We’ll review them and send a tailored price. Custom plans can be paid in instalments by agreement.</p>
+      </div>
+      <form id="quoteform" novalidate>
+        <div class="grid">
+          <label>Your name<input name="name" required autocomplete="name"></label>
+          <label>Business name<input name="business" required autocomplete="organization"></label>
+          <label>Email<input name="email" type="email" required autocomplete="email"></label>
+          <label>Phone or WhatsApp<input name="phone" type="tel" autocomplete="tel"></label>
+          <label class="full">Website or Google Business profile<input name="website" type="text" placeholder="Optional"></label>
+          <fieldset class="full">
+            <legend>Services you’re interested in</legend>
+            <div class="chips" id="chips"></div>
+          </fieldset>
+          <label class="full">Tell us about your business and goals<textarea name="message" placeholder="What you sell, where your customers are, monthly ad budget if you know it"></textarea></label>
+          <input class="hp" name="company_url" tabindex="-1" autocomplete="off" aria-hidden="true">
+        </div>
+        <button class="btn btn-dark btn-send" type="submit">Request a custom quote</button>
+        <p class="note" id="quotenote" role="status"></p>
+      </form>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="head"><h2>Payments and ad budget</h2></div>
+    <div class="terms">
+      <div><h3>Fixed plans</h3><p>Paid in full upfront for the period you choose. 1 month is 5% off the standard rate, 3, 6 and 12 months are 10%, 15% and 20% off, and 2 months uses a special rate.</p></div>
+      <div><h3>Your advertising spend</h3><p>You pay Google Ads and Meta Ads directly from your own account and card. Ad spend is separate from our management fee and is never collected or held by Molina Growth.</p></div>
+      <div><h3>Account ownership</h3><p>You keep ownership and control of your Google Ads and Meta Ads accounts and give us the access needed to manage your campaigns.</p></div>
+    </div>
+  </section>
+  <section class="block" id="contact">
+    <div class="contact">
+      <div>
+        <h2>Contact us</h2>
+        <p class="lead gap">Questions before you choose a plan? Message us on WhatsApp or send an email. We reply within one business day.</p>
+      </div>
+      <div class="contact-ways">
+        <a class="way way-wa" id="wa-main" href="#" target="_blank" rel="noopener">
+          <svg class="chat-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 10.5h7M8.5 13.5h4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span><b>Chat on WhatsApp</b><small id="wa-number"></small></span>
+        </a>
+        <a class="way" id="mail-main" href="#" hidden>
+          <svg class="chat-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m4 7 8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          <span><b>Send an email</b><small id="mail-label"></small></span>
+        </a>
+      </div>
+    </div>
+  </section>
+  </main>
+
+  <!-- botão flutuante do WhatsApp (sempre visível) -->
+  <a class="wa-float" id="wa-float" href="#" target="_blank" rel="noopener" aria-label="Contact us on WhatsApp">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8.5 10.5h7M8.5 13.5h4.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+    <span>Contact us</span>
+  </a>
+
+  <!-- barra fixa de pagamento: aparece no celular/tablet quando o painel do plano sai da tela -->
+  <div class="paybar" id="paybar" aria-hidden="true">
+    <div><span id="pb-plan"></span><b id="pb-total"></b></div>
+    <button type="button" class="btn" id="pb-btn" tabindex="-1">Pay now</button>
+  </div>
+
+  <footer>
+    <div class="foot-brand"><img src="logo-header.png" width="720" height="185" alt="" loading="lazy"><span>© <span id="yr"></span> Molina Growth. <a href="#" id="contactmail"></a></span></div>
+    <div><button type="button" data-legal="terms">Terms of service</button><button type="button" data-legal="refund">Refund policy</button><button type="button" data-legal="privacy">Privacy</button></div>
+  </footer>
+</div>
+
+<dialog id="checkout" aria-labelledby="co-title">
+  <div class="dlg-head">
+    <div><h3 id="co-title">Premium, 6 months</h3><p id="co-sub"></p></div>
+    <div class="dlg-right"><div class="amt" id="co-amt"></div><button class="x" type="button" data-close aria-label="Close">×</button></div>
+  </div>
+  <div class="dlg-body" id="co-form-wrap">
+    <form id="coform" novalidate>
+      <ul class="co-steps">
+        <li>You’ll enter your name, email, business and card on <b>Stripe’s secure payment page</b>. Apple Pay and Google Pay work too.</li>
+        <li>After paying you come straight back here and get a receipt by email.</li>
+        <li>We contact you within one business day to book your kickoff call.</li>
+      </ul>
+      <label class="check"><input type="checkbox" name="agree" required> <span>I agree to the <button type="button" data-legal="terms" class="textlink">terms of service</button> and <button type="button" data-legal="refund" class="textlink">refund policy</button>.</span></label>
+      <button class="btn btn-dark" type="submit" id="co-submit">Continue to secure payment</button>
+      <p class="note" id="conote" role="alert"></p>
+      <p class="fine">Card details are handled by Stripe and never touch our servers. Ad spend is not included and is paid by you directly to Google or Meta.</p>
+    </form>
+  </div>
+  <div class="dlg-body state" id="co-done" hidden>
+    <div class="tick" aria-hidden="true"></div>
+    <h3>Payment received</h3>
+    <p id="done-text">Thank you. A receipt is on its way to your email.</p>
+    <p>We’ll contact you within one business day to book your kickoff call, where we answer your questions and agree the strategy.</p>
+    <p id="book-wrap" hidden><a class="btn btn-dark" id="book-link" href="#" target="_blank" rel="noopener">Book your kickoff call now</a></p>
+    <button class="btn btn-outline" type="button" data-close>Close</button>
+  </div>
+</dialog>
+
+<dialog id="legal" aria-labelledby="legal-title">
+  <div class="dlg-head"><h3 id="legal-title">Terms</h3><button class="x" type="button" data-close aria-label="Close">×</button></div>
+  <div class="legal" id="legal-body"></div>
+</dialog>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

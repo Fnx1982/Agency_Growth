@@ -1,0 +1,26 @@
+# Configuração do Cloudflare Worker (site + backend de pagamento)
+name = "molina-growth"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+# Arquivos do site (HTML, CSS, JS, imagens), todos na raiz do repositório.
+# O arquivo .assetsignore esconde do público os arquivos do backend.
+# Só o que não for arquivo (ex.: /api/...) chega no Worker.
+[assets]
+directory = "./"
+binding = "ASSETS"
+
+[observability]
+enabled = true
+
+# Variáveis NÃO secretas. As secretas (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, RESEND_API_KEY)
+# vão no painel da Cloudflare: Worker > Settings > Variables and Secrets > tipo Secret.
+[vars]
+# Sem domínio próprio o Resend só envia deste remetente, e só para o e-mail da sua conta Resend:
+MAIL_FROM = "Molina Growth <onboarding@resend.dev>"
+# TEM que ser o mesmo e-mail com que você criou a conta no Resend:
+TEAM_EMAIL = "molinagrowthagency@gmail.com"
+# E-mail que aparece no site para os clientes:
+CONTACT_EMAIL = "molinagrowthagency@gmail.com"
+# Opcional: link do Calendly/Google Agenda para o cliente marcar a call
+BOOKING_URL = ""

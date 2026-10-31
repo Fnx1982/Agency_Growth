@@ -1,0 +1,18 @@
+# Arquivos que NÃO devem ser publicados como site (só o Worker usa)
+worker.js
+stripe-api.js
+email.js
+utils.js
+wrangler.toml
+package.json
+package-lock.json
+README.md
+readme.md
+.gitignore
+.assetsignore
+.dev.vars
+.dev.vars.example
+node_modules
+.wrangler
+.git
+.github
