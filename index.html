@@ -1,5 +1,6 @@
-<!-- Molina Growth: estrutura da página. Visual em css/style.css, lógica em js/app.js -->
 <!DOCTYPE html>
+<!-- Molina Growth: estrutura da página. Visual em style.css, lógica em app.js.
+     Ao alterar style.css ou app.js, aumente o número do ?v= (ex.: v=5) para o navegador baixar a versão nova. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -15,7 +16,7 @@
 <meta property="og:description" content="Google Ads, Meta Ads and lead generation for local businesses in the UK and the US.">
 <meta property="og:image" content="/logo.png">
 <meta name="theme-color" content="#E3E3DF">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 <div class="wrap">
@@ -25,7 +26,7 @@
       <button type="button" data-region="uk" aria-pressed="true">United Kingdom £</button>
       <button type="button" data-region="us" aria-pressed="false">United States $</button>
     </div>
-    <nav><a href="#compare">Compare plans</a><a href="#custom">Custom quote</a><a href="#contact">Contact us</a></nav>
+    <nav><a href="#compare">Compare plans</a><a href="#contact">Contact us</a></nav>
   </header>
 
   <main>
@@ -194,6 +195,6 @@
   <div class="legal" id="legal-body"></div>
 </dialog>
 
-<script type="module" src="app.js"></script>
+<script type="module" src="app.js?v=4"></script>
 </body>
 </html>
