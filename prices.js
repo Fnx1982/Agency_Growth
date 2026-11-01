@@ -52,3 +52,18 @@ export function fullMinor(region, plan, months) {
   const std = PRICES[region]?.plans[plan]?.std;
   return typeof std === "number" ? Math.round(std * 100 * months) : null;
 }
+
+/** Versão da tabela de preços/planos (vai no contrato). Mude quando mudar preços ou o que cada plano inclui. */
+export const PLAN_VERSION = "plans-2026-11";
+
+/** Formas de pagamento. "monthly" = parcelado: valor cheio por mês, sem desconto, cobrado automaticamente. */
+export const BILLING = { upfront: "upfront", monthly: "monthly" };
+
+/** Valor de cada parcela mensal em centavos (preço cheio). */
+export function monthlyMinor(region, plan) {
+  const std = PRICES[region]?.plans[plan]?.std;
+  return typeof std === "number" ? Math.round(std * 100) : null;
+}
+
+/** Meses sem atraso tolerado antes do cancelamento por falta de pagamento (contrato / condições do plano). */
+export const UNPAID_CANCEL_DAYS = 90;

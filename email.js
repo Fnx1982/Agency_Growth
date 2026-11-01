@@ -6,6 +6,7 @@
  * O recibo do CLIENTE é enviado pela própria Stripe (ative em Configurações > E-mails de clientes).
  */
 import { PLAN_NAMES } from "./prices.js";
+import { planTerms } from "./plan-terms.js";
 import { h, fmt } from "./utils.js";
 
 /* ---------------- envio ---------------- */
@@ -37,54 +38,127 @@ const table = (rows, labelWidth = 140) =>
     `<td style="padding:8px;border-bottom:1px solid #ddd"><b>${h(v || "-")}</b></td></tr>`).join("") +
   "</table>";
 
-/* ---------------- pagamento concluído ---------------- */
-export async function sendPaidEmail(session, env, testMode) {
-  const m = session.metadata || {};
-  const c = session.customer_details || {};
-  const field = (key) => (session.custom_fields || []).find((f) => f.key === key)?.text?.value || "";
-  const name = c.name || "Client";
-  const first = name.split(" ")[0];
-  const email = c.email || "";
-  const phone = c.phone || "";
-  const amount = fmt(session.amount_total, String(session.currency || "").toUpperCase());
-  const planName = `${PLAN_NAMES[m.plan] || m.plan}, ${m.months} ${m.months === "1" ? "month" : "months"}`;
-  const regionLabel = m.region === "us" ? "EUA" : "UK";
-  const a = c.address || {};
-  const address = [a.line1, a.line2, a.city, a.state, a.postal_code, a.country].filter(Boolean).join(", ");
-  const phoneDigits = phone.replace(/\D/g, "");
+/* ---------------- ajudantes ---------------- */
+const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "-");
+const testBanner = (test) => (test ? '<p style="background:#fff3cd;padding:8px 12px;border-radius:4px">Pagamento de TESTE, nenhum dinheiro real.</p>' : "");
+const planLabel = (m) => `${PLAN_NAMES[m.plan] || m.plan}, ${m.months} ${m.months === "1" ? "month" : "months"}`;
+const regionLabel = (m) => (m.region === "us" ? "EUA" : "UK");
+const firstName = (m) => String(m.rep_name || "there").split(" ")[0];
 
-  // Mensagem pronta para a equipe mandar ao cliente (e-mail ou WhatsApp)
-  const replySubject = `Molina Growth: your ${planName} plan, next steps`;
+/** Botões "Responder por e-mail" e "Chamar no WhatsApp" com mensagem pronta para o cliente. */
+function replyButtons(m, subject, body) {
+  const mailto = `mailto:${encodeURIComponent(m.email || "")}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const digits = String(m.phone || "").replace(/\D/g, "");
+  return button(mailto, "Responder por e-mail", true) + (digits ? button(`https://wa.me/${digits}?text=${encodeURIComponent(body)}`, "Chamar no WhatsApp") : "");
+}
+
+function clientRows(m) {
+  return [
+    ["Empresa", m.legal_name], ["Registro / EIN", m.reg_no], ["Endereço", m.address],
+    ["Representante", m.rep_name ? `${m.rep_name}${m.rep_title ? ", " + m.rep_title : ""}` : ""],
+    ["E-mail", m.email], ["Telefone", m.phone], ["Site", m.website],
+  ];
+}
+
+/* ---------------- pagamento concluído (à vista ou 1ª parcela) ---------------- */
+export async function sendPaidEmail(session, env, { test, site, endsAt }) {
+  const m = session.metadata || {};
+  const monthly = m.billing === "monthly";
+  const amount = fmt(session.amount_total, String(session.currency || "").toUpperCase());
+  const plan = planLabel(m);
+  const t = planTerms(m.region, m.plan, Number(m.months), m.billing);
+
   const replyBody =
-    `Hi ${first}! This is the Molina Growth team. Thank you for purchasing the ${planName} plan. ` +
+    `Hi ${firstName(m)}! This is the Molina Growth team. Thank you for purchasing the ${plan} plan. ` +
     `To get started, we'll need access to your Google Ads and/or Meta Ads accounts, and we'll send you a short ` +
     `step-by-step guide for that shortly. Any questions, just reply here.`;
-  const mailto = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(replySubject)}&body=${encodeURIComponent(replyBody)}`;
-  const whatsapp = phoneDigits ? `https://wa.me/${phoneDigits}?text=${encodeURIComponent(replyBody)}` : "";
-  const dashboard = `https://dashboard.stripe.com/${testMode ? "test/" : ""}payments/${session.payment_intent || ""}`;
+  const agreementUrl = `${site}/agreement.html?id=${encodeURIComponent(session.id)}`;
+  const dashboard = `https://dashboard.stripe.com/${test ? "test/" : ""}${monthly ? "subscriptions/" + (session.subscription || "") : "payments/" + (session.payment_intent || "")}`;
 
   await sendMail(env, {
-    reply_to: email || undefined,
-    subject: `${testMode ? "[TESTE] " : ""}Pagamento recebido: ${planName} ${regionLabel}, ${amount} (${name})`,
+    reply_to: m.email || undefined,
+    subject: `${test ? "[TESTE] " : ""}Pagamento recebido: ${plan} ${regionLabel(m)}, ${monthly ? "1ª parcela " : ""}${amount} (${m.legal_name || m.rep_name})`,
     html: wrap(
-      (testMode ? '<p style="background:#fff3cd;padding:8px 12px;border-radius:4px">Pagamento de TESTE, nenhum dinheiro real.</p>' : "") +
-      `<h2 style="margin:0 0 6px">Novo pagamento: ${h(amount)}</h2>` +
+      testBanner(test) +
+      `<h2 style="margin:0 0 6px">${monthly ? "Novo plano mensal: 1ª parcela de " : "Novo pagamento: "}${h(amount)}</h2>` +
       '<p style="margin:0 0 18px;color:#555">Entrar em contato com o cliente e enviar o passo a passo de acesso às contas de anúncio.</p>' +
-      button(mailto, "Responder por e-mail", true) +
-      (whatsapp ? button(whatsapp, "Chamar no WhatsApp") : "") +
+      replyButtons(m, `Molina Growth: your ${plan} plan, next steps`, replyBody) +
+      button(agreementUrl, "Ver contrato assinado") +
       button(dashboard, "Abrir na Stripe") +
       table([
-        ["Plano", `${planName} (${regionLabel})`],
-        ["Valor pago", amount],
-        ["Cliente", name],
-        ["Empresa", field("business")],
-        ["E-mail", email],
-        ["Telefone", phone],
-        ["Site", field("website")],
-        ["Endereço", address],
+        ["Plano", `${plan} (${regionLabel(m)})`],
+        ["Pagamento", monthly ? `Mensal: ${t.price}` : `À vista: ${t.price}`],
+        ...(monthly ? [["Termina em", `${fmtDate(endsAt)} (encerra sozinho após ${m.months} parcelas)`]] : []),
+        ...clientRows(m),
+        ["Assinado por", `${m.sig_name || "-"} em ${m.accepted_at ? new Date(m.accepted_at).toUTCString() : "-"} (IP ${m.ip || "-"})`],
+        ["Contrato", m.contract],
         ["Referência", session.id],
-        ["Data", new Date((session.created || Date.now() / 1000) * 1000).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })],
       ]),
+    ),
+  });
+}
+
+/* ---------------- avisos do plano mensal ---------------- */
+export async function sendSubscriptionEmail(kind, sub, env, { test, invoice } = {}) {
+  const m = sub.metadata || {};
+  const plan = planLabel(m);
+  const amount = invoice ? fmt(invoice.amount_due ?? invoice.amount_paid ?? 0, String(invoice.currency || "").toUpperCase()) : "";
+  const cancelOn = m.unpaid_since ? fmtDate(new Date((Number(m.unpaid_since) + 90 * 86400) * 1000).toISOString())
+    : fmtDate(new Date(Date.now() + 90 * 86400 * 1000).toISOString());
+  const dashboard = `https://dashboard.stripe.com/${test ? "test/" : ""}subscriptions/${sub.id}`;
+
+  const K = {
+    failed: {
+      subject: `Parcela NÃO paga: ${plan} (${m.legal_name || m.rep_name})`,
+      title: `Parcela mensal falhou${amount ? ": " + amount : ""}`,
+      text: `<b>Pausar as campanhas</b> até o pagamento. A Stripe vai tentar cobrar de novo e manda ao cliente um e-mail para atualizar o cartão (se estiver ativado nas configurações). Se continuar sem pagar, o plano é <b>cancelado automaticamente em ${cancelOn}</b> (3 meses).`,
+      reply: [`Molina Growth: payment issue on your ${plan} plan`,
+        `Hi ${firstName(m)}, this is the Molina Growth team. Your monthly payment for the ${plan} plan didn't go through, so your campaigns are paused for now. Please update your card using the link in the email from Stripe, or reply here and we'll help. As set out in our agreement, if the payment remains unpaid for 3 months the plan will be cancelled.`],
+    },
+    recovered: {
+      subject: `Pagamento regularizado: ${plan} (${m.legal_name || m.rep_name})`,
+      title: `Parcela paga após atraso${amount ? ": " + amount : ""}`,
+      text: "O cliente regularizou o pagamento. <b>Reativar as campanhas.</b>",
+      reply: [`Molina Growth: payment received`, `Hi ${firstName(m)}, this is the Molina Growth team. Thank you, your payment has been received and we're resuming your campaigns.`],
+    },
+    installment: {
+      subject: `Parcela paga: ${plan} (${m.legal_name || m.rep_name})${amount ? ", " + amount : ""}`,
+      title: `Parcela mensal paga${amount ? ": " + amount : ""}`,
+      text: "Pagamento mensal recebido normalmente. Nada a fazer.",
+      reply: null,
+    },
+    completed: {
+      subject: `Plano mensal concluído: ${plan} (${m.legal_name || m.rep_name})`,
+      title: "Plano mensal terminou",
+      text: `Todas as ${m.months} parcelas foram cobradas e a assinatura encerrou sozinha. Bom momento para oferecer a renovação.`,
+      reply: [`Molina Growth: your ${plan} plan`, `Hi ${firstName(m)}, this is the Molina Growth team. Your ${plan} plan has now been completed. Would you like to continue with a new plan? Just reply here.`],
+    },
+    cancelled: {
+      subject: `Assinatura cancelada: ${plan} (${m.legal_name || m.rep_name})`,
+      title: "Assinatura cancelada antes do fim",
+      text: "A assinatura foi cancelada (pelo painel da Stripe ou a pedido do cliente). Não haverá novas cobranças. <b>Encerrar o serviço ao fim do período já pago.</b>",
+      reply: null,
+    },
+    cancelled_nonpayment: {
+      subject: `CANCELADO por falta de pagamento: ${plan} (${m.legal_name || m.rep_name})`,
+      title: "Plano cancelado: 3 meses sem pagamento",
+      text: "A parcela ficou em aberto por 3 meses e o plano foi <b>cancelado automaticamente</b>, como previsto no contrato. Valores já vencidos continuam devidos.",
+      reply: [`Molina Growth: your ${plan} plan has been cancelled`,
+        `Hi ${firstName(m)}, this is the Molina Growth team. As your monthly payment for the ${plan} plan has remained unpaid for 3 months, the plan has been cancelled as set out in our agreement. If you'd like to restart, just reply here.`],
+    },
+  }[kind];
+  if (!K) return;
+
+  await sendMail(env, {
+    reply_to: m.email || undefined,
+    subject: `${test ? "[TESTE] " : ""}${K.subject}`,
+    html: wrap(
+      testBanner(test) +
+      `<h2 style="margin:0 0 6px">${h(K.title)}</h2>` +
+      `<p style="margin:0 0 18px;color:#333">${K.text}</p>` +
+      (K.reply ? replyButtons(m, K.reply[0], K.reply[1]) : "") +
+      button(dashboard, "Abrir na Stripe") +
+      table([["Plano", `${plan} (${regionLabel(m)}), mensal`], ...clientRows(m), ["Assinatura", sub.id]]),
     ),
   });
 }

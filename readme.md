@@ -8,7 +8,11 @@ Todos os arquivos ficam na RAIZ do repositório (sem pastas).
 | `style.css` | visual (cores no topo, em `:root`) |
 | `prices.js` | **preços**: fonte única, usada pelo site E pela cobrança |
 | `content.js` | itens dos planos, tabela, serviços, WhatsApp, termos/reembolso/privacidade |
-| `app.js` | lógica da página (configurador, pagamento, formulário) |
+| `app.js` | lógica da página (configurador, cadastro, contrato, pagamento, formulários) |
+| `contracts.js` | **contratos** UK (England and Wales) e EUA (Florida). Mudou o texto? crie uma versão nova |
+| `plan-terms.js` | texto do plano que entra na seção 19 do contrato (preço, forma de pagamento, condições) |
+| `agreement.html` / `agreement.js` | página do contrato assinado (o cliente baixa em PDF) |
+| `countries.js` | países, DDI e formato de telefone |
 | `*.png` | logo e ícones |
 | `worker.js` | backend na Cloudflare (rotas `/api/...`) |
 | `stripe-api.js` | integração com a Stripe |
@@ -27,7 +31,14 @@ Todos os arquivos ficam na RAIZ do repositório (sem pastas).
 - `RESEND_API_KEY`: `re_...`
 
 ## Webhook da Stripe
-Endpoint: `https://SEU-SITE/api/webhook`, evento `checkout.session.completed`.
+Endpoint: `https://SEU-SITE/api/webhook`, estilo Instantâneo (Snapshot), eventos:
+`checkout.session.completed`, `checkout.session.async_payment_succeeded`, `invoice.paid`,
+`invoice.payment_failed`, `customer.subscription.deleted`.
+
+## Plano mensal (parcelado)
+- Sem desconto; cobrado todo mês e encerra sozinho após N meses.
+- Parcela falhou: e-mail para a equipe (pausar campanhas). A Stripe avisa o cliente (ative em Configurações > Billing).
+- 90 dias sem pagar: a tarefa diária (Cron em `wrangler.toml`) cancela a assinatura e avisa a equipe.
 
 ## Sem domínio próprio
 O Resend só envia de `onboarding@resend.dev` e só para o e-mail da sua conta Resend

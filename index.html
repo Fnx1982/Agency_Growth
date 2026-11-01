@@ -16,7 +16,7 @@
 <meta property="og:description" content="Google Ads, Meta Ads and lead generation for local businesses in the UK and the US.">
 <meta property="og:image" content="/logo.png">
 <meta name="theme-color" content="#E3E3DF">
-<link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 <div class="wrap">
@@ -55,8 +55,15 @@
         <button type="button" data-months="6" aria-pressed="false">6 mo</button>
         <button type="button" data-months="12" aria-pressed="false">12 mo</button>
       </div>
+      <div id="paywrap" hidden>
+        <p class="cfg-label" id="pay-label">How you pay</p>
+        <div class="seg pays" role="group" aria-labelledby="pay-label">
+          <button type="button" data-billing="upfront" aria-pressed="true"><b>Upfront</b><span id="pay-up-note">Save 15%</span></button>
+          <button type="button" data-billing="monthly" aria-pressed="false"><b>Monthly</b><span>No discount</span></button>
+        </div>
+      </div>
       <div class="price" aria-live="polite">
-        <div class="price-row"><div class="total" id="total">£0</div><div class="was-wrap"><s class="was" id="was" hidden></s><span class="off" id="off" hidden></span></div></div>
+        <div class="price-row"><div class="total" id="total">£0</div><span class="per" id="per" hidden>/month</span><div class="was-wrap"><s class="was" id="was" hidden></s><span class="off" id="off" hidden></span></div></div>
         <p class="sub" id="sub"></p>
         <div class="save"><div class="bar"><i id="bar"></i></div><p id="savetext"></p></div>
       </div>
@@ -170,18 +177,52 @@
 
 <dialog id="checkout" aria-labelledby="co-title">
   <div class="dlg-head">
-    <div><h3 id="co-title">Premium, 6 months</h3><p id="co-sub"></p></div>
+    <div><h3 id="co-title">Starter, 1 month</h3><p id="co-sub"></p></div>
     <div class="dlg-right"><div class="amt" id="co-amt"></div><button class="x" type="button" data-close aria-label="Close">×</button></div>
   </div>
   <div class="dlg-body" id="co-form-wrap">
+    <ol class="co-progress" aria-label="Checkout steps">
+      <li id="prog-1" aria-current="step">Your business</li>
+      <li id="prog-2">Review and sign</li>
+      <li id="prog-3">Payment</li>
+    </ol>
     <form id="coform" novalidate>
-      <ul class="co-steps">
-        <li>You’ll enter your name, email, business and card on <b>Stripe’s secure payment page</b>. Apple Pay and Google Pay work too.</li>
-        <li>After paying you come straight back here and get a receipt by email.</li>
-        <li>We contact you within one business day with the next steps.</li>
-      </ul>
-      <label class="check"><input type="checkbox" name="agree" required> <span>I agree to the <button type="button" data-legal="terms" class="textlink">terms of service</button> and <button type="button" data-legal="refund" class="textlink">refund policy</button>.</span></label>
-      <button class="btn btn-dark" type="submit" id="co-submit">Continue to secure payment</button>
+      <section id="co-step1">
+        <p class="co-intro">These details go into your service agreement. Our plans are for businesses.</p>
+        <div class="grid">
+          <label class="full">Legal business name<input name="legal_name" required autocomplete="organization" placeholder="e.g. Smith Plumbing Ltd"></label>
+          <label class="full">Company number / registration / EIN <span class="opt">(optional)</span><input name="reg_no" autocomplete="off"></label>
+          <label class="full">Business address<input name="street" required autocomplete="address-line1" placeholder="Street and number"></label>
+          <label>Town or city<input name="city" required autocomplete="address-level2"></label>
+          <label><span id="pc-label">Postcode</span><input name="postcode" required autocomplete="postal-code"></label>
+          <label class="full">Country<select name="country" id="co-country" required autocomplete="country-name"></select></label>
+          <label>Your full name<input name="rep_name" required autocomplete="name"></label>
+          <label>Your role<input name="rep_title" required autocomplete="organization-title" placeholder="e.g. Owner, Director"></label>
+          <label class="full">Email<input name="email" type="email" required autocomplete="email"></label>
+          <div class="full phone-field">
+            <label for="co-phone">Phone or WhatsApp <span class="opt">(optional)</span></label>
+            <div class="phone-row">
+              <select id="co-cc" aria-label="Country code"></select>
+              <input id="co-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel-national">
+            </div>
+          </div>
+          <label class="full">Website or Google Business profile <span class="opt">(optional)</span><input name="website"></label>
+        </div>
+        <label class="check"><input type="checkbox" name="b2b" required> <span>I’m buying for my business, not as a private consumer, and I’m authorised to sign for it.</span></label>
+        <button class="btn btn-dark" type="button" id="co-next">Continue to the agreement</button>
+      </section>
+
+      <section id="co-step2" hidden>
+        <div class="co-summary" id="co-summary"></div>
+        <p class="co-intro">Please read the agreement below. Your details and plan are already filled in.</p>
+        <div class="ag-box" id="ag-preview" tabindex="0" aria-label="Service agreement"></div>
+        <label class="full sig">Type your full name to sign<input name="sig_name" required autocomplete="name"></label>
+        <label class="check"><input type="checkbox" name="agree" required> <span>I have read and agree to the <span id="ag-name">Business Marketing Services Agreement</span>, including its cancellation and refund terms.</span></label>
+        <div class="co-actions">
+          <button class="btn btn-outline" type="button" id="co-back">Back</button>
+          <button class="btn btn-dark" type="submit" id="co-submit">Sign and continue to payment</button>
+        </div>
+      </section>
       <p class="note" id="conote" role="alert"></p>
       <p class="fine">Card details are handled by Stripe and never touch our servers. Ad spend is not included and is paid by you directly to Google or Meta.</p>
     </form>
@@ -191,6 +232,7 @@
     <h3>Payment received</h3>
     <p id="done-text">Thank you. A receipt is on its way to your email.</p>
     <p>We’ll contact you on WhatsApp or email within one business day with the next steps to get your campaigns started.</p>
+    <p id="ag-link-wrap" hidden><a class="btn btn-dark" id="ag-link" href="#" target="_blank" rel="noopener">View and download your signed agreement</a></p>
     <button class="btn btn-outline" type="button" data-close>Close</button>
   </div>
 </dialog>
@@ -233,6 +275,6 @@
   <div class="legal" id="legal-body"></div>
 </dialog>
 
-<script type="module" src="app.js?v=9"></script>
+<script type="module" src="app.js?v=10"></script>
 </body>
 </html>

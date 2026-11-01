@@ -334,3 +334,44 @@ button.way:focus-visible{outline:3px solid var(--signal);outline-offset:3px}
 #contactform textarea{min-height:120px}
 .opt{font-weight:400;color:var(--mute)}
 .fine a{color:inherit}
+
+/* ===== à vista x mensal ===== */
+.pays{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pays button{padding:10px 14px;text-align:left}
+.pays button b{display:block;font-size:15px}
+.pays button span{font-weight:400;font-size:12px;opacity:.75}
+.per{font-size:18px;font-weight:600;color:var(--on-ink-mute);padding-bottom:8px}
+.per[hidden]{display:none}
+
+/* ===== checkout em etapas ===== */
+.co-progress{list-style:none;margin:0 0 18px;padding:0;display:flex;gap:6px;counter-reset:p;font-size:13px}
+.co-progress li{counter-increment:p;flex:1;padding:8px 0 0;border-top:3px solid var(--rule);color:var(--mute)}
+.co-progress li::before{content:counter(p) ". "}
+.co-progress li[aria-current]{border-color:var(--ink);color:var(--ink);font-weight:700}
+.co-intro{color:var(--mute);font-size:15px;margin:0 0 14px}
+.co-summary{display:flex;flex-direction:column;gap:2px;background:var(--ink);color:var(--on-ink);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:14px;font-size:14px}
+.co-summary b{font-size:16px}
+.co-summary span{color:var(--on-ink-mute)}
+.ag-box{background:#fff;border:1.5px solid var(--rule);border-radius:var(--r-sm);padding:18px 20px;max-height:44vh;overflow:auto;font-size:13px;line-height:1.55}
+.ag-box:focus-visible{outline:3px solid var(--signal)}
+.ag-box .ag h2{font-size:16px;text-align:center;margin:0}
+.ag-box .ag-title{text-align:center;font-weight:700;margin:2px 0 0}
+.ag-box .ag-law{text-align:center;color:var(--mute);font-size:12px;margin:2px 0 14px}
+.ag-box h3{font-size:13px;margin:14px 0 4px}
+.ag-box p{margin:0 0 8px}
+.ag-box .ag-table{width:100%;border-collapse:collapse;margin:8px 0 12px;font-size:12px}
+.ag-box .ag-table th,.ag-box .ag-table td{border:1px solid #ddd;padding:5px 8px;text-align:left;vertical-align:top}
+.ag-box .ag-table th{width:40%;background:#f5f5f3;font-weight:600}
+.ag-box .ag-sign th{background:#eef4ef}
+.ag-box .ag-blank{color:#999}
+.sig{margin-top:16px}
+.co-actions{display:flex;gap:10px;margin-top:18px}
+.co-actions .btn{margin-top:0}
+.co-actions .btn-dark{flex:1}
+#co-step1 .btn-dark{width:100%;margin-top:18px}
+#ag-link-wrap .btn{margin-top:12px}
+@media (max-width:560px){
+  .co-progress{font-size:12px}
+  .ag-box{max-height:none;padding:14px}
+  .co-actions{flex-direction:column-reverse}
+}

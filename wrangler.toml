@@ -22,3 +22,7 @@ MAIL_FROM = "Molina Growth <onboarding@resend.dev>"
 TEAM_EMAIL = "molinagrowthagency@gmail.com"
 # E-mail que aparece no site para os clientes:
 CONTACT_EMAIL = "molinagrowthagency@gmail.com"
+
+# Tarefa diária (12:00 UTC): cancela planos mensais com parcela em aberto há 90 dias.
+[triggers]
+crons = ["0 12 * * *"]
