@@ -11,6 +11,7 @@
 export const CONTACT = {
   whatsappUrl: "https://wa.me/447466689871?text=Hi!%20I%20want%20to%20know%20more%20about%20your%20Meta%20Ads%20trial",
   whatsappNumber: "+44 7466 689871",
+  email: "molinagrowthagency@gmail.com", // aparece em "Contact us" e no rodapé
 };
 
 /**
@@ -90,7 +91,7 @@ export const LEGAL = {
     sections: [
       ["The service", "Molina Growth provides advertising management, lead generation and social media services as described in the plan you buy. We don't guarantee a specific number of leads or sales, as results depend on your market, offer and ad budget."],
       ["Payment", "Fixed plans are paid in full upfront for the selected period. Prices exclude your advertising spend, which you pay directly to Google or Meta."],
-      ["Start date", "Your service period starts on the day your campaigns go live after the kickoff call, not the day you pay."],
+      ["Start date", "Your service period starts on the day your campaigns go live, not the day you pay."],
       ["Your accounts", "You keep ownership of your ad and social accounts and give us the access needed to deliver the service."],
       ["Contact", "Questions about these terms: {email}."],
     ],
@@ -98,7 +99,7 @@ export const LEGAL = {
   refund: {
     title: "Refund policy",
     sections: [
-      ["Before kickoff", "If you cancel before your kickoff call, we refund the full amount you paid."],
+      ["Before campaigns start", "If you cancel before your campaigns go live, we refund the full amount you paid."],
       ["After campaigns go live", "Fixed plans are discounted for upfront payment. After campaigns go live, unused full months can be refunded at the standard monthly rate, minus any discount already applied. [Edit this to match your policy.]"],
       ["How to request", "Email {email} with your order details. Refunds go back to the original card within 5 to 10 business days."],
     ],

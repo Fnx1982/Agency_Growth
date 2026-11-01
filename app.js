@@ -1,9 +1,10 @@
 /**
  * Lógica da página: configurador de plano, pagamento (Stripe), orçamento e páginas legais.
- * Preços: js/prices.js   |   Textos/listas: js/content.js   |   Visual: css/style.css
+ * Preços: prices.js   |   Textos/listas: content.js   |   Visual: style.css
  */
-import { PRICES, PLAN_NAMES } from "./prices.js";
+import { PRICES, PLAN_NAMES, DISCOUNTS, totalMinor, fullMinor } from "./prices.js";
 import { INCLUDED, COMPARE, SERVICES, LEGAL, CONTACT, BADGES } from "./content.js";
+import { DIAL, TOP, EXAMPLES } from "./countries.js";
 
 /* ---------------- utilitários ---------------- */
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -13,7 +14,7 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 /* ---------------- estado ---------------- */
 const state = { region: "uk", plan: "starter", months: 1 }; // o site sempre abre no Starter, 1 mês
-let config = { testMode: true, bookingUrl: "", contactEmail: "" };
+let config = { testMode: true, contactEmail: CONTACT.email || "" };
 
 try {
   const saved = localStorage.getItem("mg_region");
@@ -26,36 +27,42 @@ const money = (value) => {
   return new Intl.NumberFormat(r.locale, { style: "currency", currency: r.currency }).format(value);
 };
 const currentPlan = () => PRICES[state.region].plans[state.plan];
-const currentTotal = () => currentPlan().totals[state.months];
+const currentTotal = () => totalMinor(state.region, state.plan, state.months) / 100;
 const planLabel = () => `${PLAN_NAMES[state.plan]}, ${state.months} ${state.months === 1 ? "month" : "months"}`;
 
 /* ---------------- render do configurador ---------------- */
 function render() {
   const plan = currentPlan();
   const total = currentTotal();
-  const full = plan.std * state.months;
+  const full = fullMinor(state.region, state.plan, state.months) / 100;
+  const pct = Math.round((DISCOUNTS[state.months] || 0) * 100);
   const saving = full - total;
-  const pct = Math.round((saving / full) * 100);
 
   $$(".region button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.region === state.region)));
   $$("[data-plan]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.plan === state.plan)));
   $$("[data-months]").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.months) === state.months)));
 
   $("#total").textContent = money(total);
+  // preço cheio riscado (só quando há desconto)
+  $("#was").textContent = pct ? money(full) : "";
+  $("#was").hidden = !pct;
+  $("#off").textContent = pct ? `${pct}% off` : "";
+  $("#off").hidden = !pct;
+
   $("#sub").innerHTML = state.months === 1
-    ? `<b>Paid upfront for 1 month.</b> Standard rate ${esc(money(plan.std))} per month.`
+    ? `<b>Paid upfront for 1 month</b> at the standard rate of ${esc(money(plan.std))}.`
     : `<b>${esc(money(total / state.months))} per month</b>, paid upfront for ${state.months} months. Standard rate ${esc(money(plan.std))}.`;
   $("#bar").style.width = Math.min(100, pct * 4) + "%";
-  $("#savetext").innerHTML = `You save <b>${esc(money(saving))}</b> (${pct}%) against the standard monthly rate.`;
+  $("#savetext").innerHTML = pct
+    ? `You save <b>${esc(money(saving))}</b> (${pct}%) by paying ${state.months} months upfront.`
+    : `Pay 2 months or more upfront to save from 5% up to 20%.`;
   $("#incl").innerHTML = INCLUDED[state.plan].map((i) => `<li>${esc(i)}</li>`).join("");
   $("#paybtn").textContent = "Pay " + money(total);
   $("#pb-plan").textContent = planLabel();
   $("#pb-total").textContent = money(total);
 
-  const plans = PRICES[state.region].plans;
-  $("#cmp-s").textContent = "from " + money(plans.starter.totals[12] / 12) + "/mo";
-  $("#cmp-p").textContent = "from " + money(plans.premium.totals[12] / 12) + "/mo";
-
+  $("#cmp-s").textContent = "from " + money(totalMinor(state.region, "starter", 12) / 1200) + "/mo";
+  $("#cmp-p").textContent = "from " + money(totalMinor(state.region, "premium", 12) / 1200) + "/mo";
 }
 
 /* ---------------- conteúdo estático gerado a partir de content.js ---------------- */
@@ -77,9 +84,36 @@ function renderStatic() {
     const b = $(`[data-months="${m}"]`);
     if (b && text) { b.classList.add("has-badge"); b.insertAdjacentHTML("beforeend", `<i class="badge">${esc(text)}</i>`); }
   }
+  renderPhoneCountries();
+  applyConfig(); // mostra o e-mail de contato mesmo antes de carregar a config do servidor
   $("#wa-main").href = CONTACT.whatsappUrl;
   $("#wa-float").href = CONTACT.whatsappUrl;
   $("#wa-number").textContent = CONTACT.whatsappNumber;
+}
+
+/* ---------------- telefone com código do país ---------------- */
+let ccTouched = false;
+function renderPhoneCountries() {
+  let names;
+  try { names = new Intl.DisplayNames(["en"], { type: "region" }); } catch (_) { names = { of: (c) => c }; }
+  const opt = (c) => `<option value="${c}">${esc(names.of(c) || c)} (+${DIAL[c]})</option>`;
+  const rest = Object.keys(DIAL).filter((c) => !TOP.includes(c)).sort((a, b) => (names.of(a) || a).localeCompare(names.of(b) || b));
+  $("#q-cc").innerHTML = TOP.map(opt).join("") + '<option disabled>──────────</option>' + rest.map(opt).join("");
+  $("#q-cc").addEventListener("change", () => { ccTouched = true; updatePhonePlaceholder(); });
+  syncPhoneCountry();
+}
+function syncPhoneCountry() {
+  if (ccTouched || !$("#q-cc")) return;
+  $("#q-cc").value = state.region === "us" ? "US" : "GB";
+  updatePhonePlaceholder();
+}
+function updatePhonePlaceholder() {
+  const c = $("#q-cc").value;
+  $("#q-phone").placeholder = EXAMPLES[c] || "Phone number";
+}
+function fullPhone() {
+  const num = $("#q-phone").value.replace(/[^\d]/g, "").replace(/^0+/, ""); // tira espaços e o 0 inicial (ex.: 07400 → 7400)
+  return num ? `+${DIAL[$("#q-cc").value]} ${num}` : "";
 }
 
 function applyConfig() {
@@ -88,7 +122,6 @@ function applyConfig() {
     a.textContent = config.contactEmail;
     a.href = "mailto:" + config.contactEmail;
     $("#mail-main").href = "mailto:" + config.contactEmail;
-    $("#mail-main").hidden = false;
     $("#mail-label").textContent = config.contactEmail;
   }
 }
@@ -101,6 +134,7 @@ document.addEventListener("click", (e) => {
     state.region = b.dataset.region;
     try { localStorage.setItem("mg_region", state.region); } catch (_) {}
     render();
+    syncPhoneCountry();
   } else if (b.dataset.plan) { state.plan = b.dataset.plan; render(); }
   else if (b.dataset.months) { state.months = Number(b.dataset.months); render(); }
   else if (b.dataset.legal) openLegal(b.dataset.legal);
@@ -202,7 +236,6 @@ async function handleReturn() {
   $("#co-title").textContent = "Thank you";
   $("#co-sub").textContent = "";
   $("#co-amt").textContent = "";
-  if (config.bookingUrl) { $("#book-wrap").hidden = false; $("#book-link").href = config.bookingUrl; }
   checkout.showModal();
   try {
     const res = await fetch("/api/order-status?id=" + encodeURIComponent(paidId));
@@ -225,8 +258,9 @@ $("#pb-btn").addEventListener("click", () => $("#paybtn").click());
 if ("IntersectionObserver" in window) {
   let configVisible = true;
   let pastConfig = false;
+  let formVisible = false; // esconde a barra enquanto a pessoa preenche o formulário Custom
   const update = () => {
-    const show = !configVisible && pastConfig && !checkout.open;
+    const show = !configVisible && pastConfig && !formVisible && !checkout.open;
     paybar.classList.toggle("show", show);
     document.body.classList.toggle("paybar-on", show);
     paybar.setAttribute("aria-hidden", String(!show));
@@ -237,6 +271,7 @@ if ("IntersectionObserver" in window) {
     pastConfig = entry.boundingClientRect.top < 0; // só mostra depois de rolar além do painel
     update();
   }).observe($(".config"));
+  new IntersectionObserver(([entry]) => { formVisible = entry.isIntersecting; update(); }).observe($("#quoteform"));
   checkout.addEventListener("close", update);
   $("#paybtn").addEventListener("click", () => setTimeout(update, 0));
 }
@@ -249,13 +284,18 @@ $("#quoteform").addEventListener("submit", async (e) => {
   const btn = f.querySelector("button[type=submit]");
   note.className = "note err";
   if (!validate(f)) { note.textContent = "Add your name, business and a valid email so we can reply."; return; }
+  const digits = $("#q-phone").value.replace(/\D/g, "");
+  if (digits && (digits.length < 6 || digits.length > 15)) {
+    $("#q-phone").setAttribute("aria-invalid", "true"); $("#q-phone").focus();
+    note.textContent = "Check the phone number, or leave it blank."; return;
+  }
 
   btn.disabled = true;
   btn.textContent = "Sending…";
   try {
     await postJSON("/api/quote", {
       region: state.region, name: f.name.value, business: f.business.value, email: f.email.value,
-      phone: f.phone.value, website: f.website.value, message: f.message.value, company_url: f.company_url.value,
+      phone: fullPhone(), website: f.website.value, message: f.message.value, mg_trap: f.mg_trap.value,
       services: $$("input[name=services]:checked", f).map((i) => i.value),
     });
     f.reset();

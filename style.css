@@ -313,3 +313,17 @@ html{scroll-behavior:smooth}
   .badge{font-size:10px;padding:3px 6px;top:-9px;right:6px}
   .months .badge{right:50%}
 }
+
+/* ===== preço com desconto: valor cheio riscado ===== */
+.price-row{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.was-wrap{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding-bottom:6px}
+.was{color:var(--on-ink-mute);font-size:20px;font-weight:600;text-decoration-thickness:2px}
+.off{background:#1E8A50;color:#fff;font-size:13px;font-weight:700;padding:3px 8px;border-radius:999px}
+.was[hidden],.off[hidden]{display:none}
+@media (max-width:560px){ .was{font-size:17px} .price-row{gap:10px} }
+
+/* ===== telefone com código do país ===== */
+.phone-field > label{margin-bottom:0}
+.phone-row{display:grid;grid-template-columns:minmax(0,220px) 1fr;gap:8px;margin-top:6px}
+.phone-row select,.phone-row input{margin-top:0}
+@media (max-width:560px){ .phone-row{grid-template-columns:1fr} }

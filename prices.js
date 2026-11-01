@@ -1,10 +1,13 @@
 /**
  * PREÇOS DOS PLANOS — fonte única.
  * Este arquivo é usado pelo site (para mostrar) E pelo Worker (para cobrar).
- * Altere só aqui. Valores em unidade normal (ex.: 1277.40 = £1.277,40).
+ * Altere só aqui.
  *
- *   std    = valor mensal padrão (sem desconto), usado para calcular a economia
- *   totals = valor TOTAL pago adiantado para cada duração (em meses)
+ *   std       = valor mensal cheio (sem desconto), em unidade normal (ex.: 120.90 = £120,90)
+ *   DISCOUNTS = desconto por duração, para pagamento à vista (0.15 = 15%)
+ *
+ * Total cobrado = std × meses × (1 − desconto), arredondado ao centavo.
+ * Ex.: Starter UK 6 meses = 120.90 × 6 × 0.85 = £616.59
  */
 export const PRICES = {
   uk: {
@@ -12,8 +15,8 @@ export const PRICES = {
     locale: "en-GB",
     label: "United Kingdom",
     plans: {
-      starter: { std: 120.90, totals: { 1: 114.90, 2: 199.80, 3: 326.70, 6: 617.40, 12: 1162.80 } },
-      premium: { std: 249.90, totals: { 1: 237.90, 2: 399.80, 3: 674.70, 6: 1277.40, 12: 2398.80 } },
+      starter: { std: 120.90 },
+      premium: { std: 249.90 },
     },
   },
   us: {
@@ -21,11 +24,14 @@ export const PRICES = {
     locale: "en-US",
     label: "United States",
     plans: {
-      starter: { std: 160.90, totals: { 1: 152.90, 2: 269.80, 3: 434.70, 6: 821.40, 12: 1546.80 } },
-      premium: { std: 329.90, totals: { 1: 313.90, 2: 539.80, 3: 890.70, 6: 1685.40, 12: 3166.80 } },
+      starter: { std: 160.90 },
+      premium: { std: 329.90 },
     },
   },
 };
+
+/** Desconto por duração (meses). 1 mês = sem desconto. */
+export const DISCOUNTS = { 1: 0, 2: 0.05, 3: 0.10, 6: 0.15, 12: 0.20 };
 
 /** Durações oferecidas (meses), na ordem dos botões. */
 export const DURATIONS = [1, 2, 3, 6, 12];
@@ -33,8 +39,16 @@ export const DURATIONS = [1, 2, 3, 6, 12];
 /** Nome exibido de cada plano. */
 export const PLAN_NAMES = { starter: "Starter", premium: "Premium" };
 
-/** Devolve o total em centavos (minor units), ou null se a combinação não existir. */
+/** Total em centavos (minor units) para cobrar, ou null se a combinação não existir. */
 export function totalMinor(region, plan, months) {
-  const total = PRICES[region]?.plans[plan]?.totals[months];
-  return typeof total === "number" ? Math.round(total * 100) : null;
+  const std = PRICES[region]?.plans[plan]?.std;
+  const d = DISCOUNTS[months];
+  if (typeof std !== "number" || typeof d !== "number") return null;
+  return Math.round(std * 100 * months * (1 - d));
+}
+
+/** Preço cheio (sem desconto) em centavos. */
+export function fullMinor(region, plan, months) {
+  const std = PRICES[region]?.plans[plan]?.std;
+  return typeof std === "number" ? Math.round(std * 100 * months) : null;
 }

@@ -56,8 +56,9 @@ export async function sendPaidEmail(session, env, testMode) {
   // Mensagem pronta para a equipe mandar ao cliente (e-mail ou WhatsApp)
   const replySubject = `Molina Growth: your ${planName} plan, next steps`;
   const replyBody =
-    `Hi ${first},\n\nThank you for choosing the ${planName} plan. We'd like to book a short kickoff call ` +
-    `to answer your questions and agree the strategy.\n\nWhich day and time work best for you this week?\n\nBest regards,\nMolina Growth`;
+    `Hi ${first}! This is the Molina Growth team. Thank you for purchasing the ${planName} plan. ` +
+    `To get started, we'll need access to your Google Ads and/or Meta Ads accounts, and we'll send you a short ` +
+    `step-by-step guide for that shortly. Any questions, just reply here.`;
   const mailto = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(replySubject)}&body=${encodeURIComponent(replyBody)}`;
   const whatsapp = phoneDigits ? `https://wa.me/${phoneDigits}?text=${encodeURIComponent(replyBody)}` : "";
   const dashboard = `https://dashboard.stripe.com/${testMode ? "test/" : ""}payments/${session.payment_intent || ""}`;
@@ -68,7 +69,7 @@ export async function sendPaidEmail(session, env, testMode) {
     html: wrap(
       (testMode ? '<p style="background:#fff3cd;padding:8px 12px;border-radius:4px">Pagamento de TESTE, nenhum dinheiro real.</p>' : "") +
       `<h2 style="margin:0 0 6px">Novo pagamento: ${h(amount)}</h2>` +
-      '<p style="margin:0 0 18px;color:#555">Entrar em contato com o cliente para agendar a call de kickoff.</p>' +
+      '<p style="margin:0 0 18px;color:#555">Entrar em contato com o cliente e enviar o passo a passo de acesso às contas de anúncio.</p>' +
       button(mailto, "Responder por e-mail", true) +
       (whatsapp ? button(whatsapp, "Chamar no WhatsApp") : "") +
       button(dashboard, "Abrir na Stripe") +
@@ -90,17 +91,29 @@ export async function sendPaidEmail(session, env, testMode) {
 
 /* ---------------- pedido de orçamento ---------------- */
 export async function sendQuoteEmail(d, env) {
+  const first = d.name.split(" ")[0];
+  const replySubject = "Molina Growth: your custom plan";
+  const replyBody =
+    `Hi ${first}! This is the Molina Growth team. Thank you for your interest in a custom plan` +
+    (d.services.length ? ` (${d.services.join(", ")})` : "") +
+    `. We're reviewing your request and will send you a tailored proposal shortly. Any questions, just reply here.`;
+  const mailto = `mailto:${encodeURIComponent(d.email)}?subject=${encodeURIComponent(replySubject)}&body=${encodeURIComponent(replyBody)}`;
+  const phoneDigits = String(d.phone || "").replace(/\D/g, "");
+  const whatsapp = phoneDigits ? `https://wa.me/${phoneDigits}?text=${encodeURIComponent(replyBody)}` : "";
+
   await sendMail(env, {
     reply_to: d.email,
     subject: `Pedido de plano personalizado (${d.region}): ${d.business}`,
     html: wrap(
-      '<h2 style="margin:0 0 14px">Novo pedido de orçamento</h2>' +
+      '<h2 style="margin:0 0 6px">Novo pedido de plano personalizado</h2>' +
+      '<p style="margin:0 0 18px;color:#555">Montar a proposta e responder o cliente.</p>' +
+      button(mailto, "Responder por e-mail", true) +
+      (whatsapp ? button(whatsapp, "Chamar no WhatsApp") : "") +
       table([
         ["Região", d.region], ["Nome", d.name], ["Empresa", d.business], ["E-mail", d.email],
         ["Telefone", d.phone], ["Site", d.website], ["Serviços", d.services.join(", ")],
       ], 120) +
-      `<p style="white-space:pre-wrap;margin-top:16px">${h(d.message || "(sem mensagem)")}</p>` +
-      '<p style="color:#555;font-size:13px">Responda este e-mail para falar direto com o cliente.</p>',
+      `<p style="margin:16px 0 4px;color:#555">Mensagem do cliente:</p><p style="white-space:pre-wrap;margin:0">${h(d.message || "(sem mensagem)")}</p>`,
     ),
   });
 }

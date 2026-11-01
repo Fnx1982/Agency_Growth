@@ -22,5 +22,3 @@ MAIL_FROM = "Molina Growth <onboarding@resend.dev>"
 TEAM_EMAIL = "molinagrowthagency@gmail.com"
 # E-mail que aparece no site para os clientes:
 CONTACT_EMAIL = "molinagrowthagency@gmail.com"
-# Opcional: link do Calendly/Google Agenda para o cliente marcar a call
-BOOKING_URL = ""

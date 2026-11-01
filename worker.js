@@ -53,7 +53,6 @@ function config(env) {
       teamEmail: env.TEAM_EMAIL || "FALTANDO",
     },
     testMode: isTestKey(env),
-    bookingUrl: env.BOOKING_URL || "",
     contactEmail: env.CONTACT_EMAIL || "",
   });
 }
@@ -153,7 +152,7 @@ async function webhook(request, env, ctx) {
 async function quote(request, env) {
   const b = await request.json().catch(() => null);
   if (!b) return json({ error: "Invalid request." }, 400);
-  if (b.company_url) return json({ ok: true }); // campo invisível: se veio preenchido é robô
+  if (b.mg_trap) { console.log("quote: honeypot preenchido, ignorado"); return json({ ok: true }); } // campo invisível: se veio preenchido é robô
 
   const d = {
     name: clean(b.name, 120), business: clean(b.business, 120), email: clean(b.email, 160),
