@@ -99,9 +99,11 @@ export const LEGAL = {
   refund: {
     title: "Refund policy",
     sections: [
-      ["Before campaigns start", "If you cancel before your campaigns go live, we refund the full amount you paid."],
-      ["After campaigns go live", "Fixed plans are discounted for upfront payment. After campaigns go live, unused full months can be refunded at the standard monthly rate, minus any discount already applied. [Edit this to match your policy.]"],
-      ["How to request", "Email {email} with your order details. Refunds go back to the original card within 5 to 10 business days."],
+      ["Before your campaigns start", "If you cancel before your campaigns go live, we refund the full amount you paid."],
+      ["After your campaigns start", "If you cancel after your campaigns go live, we refund the full months not yet started, calculated at the monthly price you paid. The month in progress is not refundable."],
+      ["Example", "You pay for 6 months and cancel during month 2. Months 3 to 6 are refunded; months 1 and 2 are not."],
+      ["Advertising spend", "Money you paid directly to Google or Meta for ads is not part of our fee and cannot be refunded by us."],
+      ["How to request", "Email {email} with the name and email used for the payment. Refunds go back to the original card within 5 to 10 business days."],
     ],
   },
   privacy: {
