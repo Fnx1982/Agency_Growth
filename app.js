@@ -3,7 +3,7 @@
  * Preços: js/prices.js   |   Textos/listas: js/content.js   |   Visual: css/style.css
  */
 import { PRICES, PLAN_NAMES } from "./prices.js";
-import { INCLUDED, COMPARE, SERVICES, LEGAL, CONTACT } from "./content.js";
+import { INCLUDED, COMPARE, SERVICES, LEGAL, CONTACT, BADGES } from "./content.js";
 
 /* ---------------- utilitários ---------------- */
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -12,7 +12,7 @@ const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 /* ---------------- estado ---------------- */
-const state = { region: "uk", plan: "premium", months: 6 };
+const state = { region: "uk", plan: "starter", months: 1 }; // o site sempre abre no Starter, 1 mês
 let config = { testMode: true, bookingUrl: "", contactEmail: "" };
 
 try {
@@ -68,6 +68,15 @@ function renderStatic() {
   $("#chips").innerHTML = SERVICES
     .map((s) => `<label><input type="checkbox" name="services" value="${esc(s)}">${esc(s)}</label>`).join("");
   $("#yr").textContent = new Date().getFullYear();
+  // selos verdes (texto em content.js > BADGES)
+  for (const [plan, text] of Object.entries(BADGES.plan || {})) {
+    const b = $(`[data-plan="${plan}"]`);
+    if (b && text) { b.classList.add("has-badge"); b.insertAdjacentHTML("beforeend", `<i class="badge">${esc(text)}</i>`); }
+  }
+  for (const [m, text] of Object.entries(BADGES.months || {})) {
+    const b = $(`[data-months="${m}"]`);
+    if (b && text) { b.classList.add("has-badge"); b.insertAdjacentHTML("beforeend", `<i class="badge">${esc(text)}</i>`); }
+  }
   $("#wa-main").href = CONTACT.whatsappUrl;
   $("#wa-float").href = CONTACT.whatsappUrl;
   $("#wa-number").textContent = CONTACT.whatsappNumber;

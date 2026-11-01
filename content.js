@@ -13,6 +13,17 @@ export const CONTACT = {
   whatsappNumber: "+44 7466 689871",
 };
 
+/**
+ * SELOS VERDES de destaque no seletor de plano.
+ * Use texto de recomendação ("Recommended", "Top pick"). Só use "Most popular" quando for verdade,
+ * ou seja, quando esse for de fato o plano mais vendido: no UK e nos EUA afirmação falsa é propaganda enganosa.
+ * Para tirar um selo, deixe o texto vazio: "".
+ */
+export const BADGES = {
+  plan: { premium: "Recommended" },
+  months: { 2: "Top pick" },
+};
+
 /** Itens mostrados no painel preto ao escolher o plano. */
 export const INCLUDED = {
   starter: [
@@ -100,4 +111,4 @@ export const LEGAL = {
       ["Your rights", "You can ask us to access, correct or delete your data at any time by emailing {email}."],
     ],
   },
-};  
+};

@@ -1,5 +1,5 @@
 # Configuração do Cloudflare Worker (site + backend de pagamento)
-name = "molina-growth"
+name = "agency-growth"
 main = "worker.js"
 compatibility_date = "2026-10-01"
 
