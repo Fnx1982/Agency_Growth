@@ -38,6 +38,7 @@ export function toForm(obj, prefix = "", out = new URLSearchParams()) {
 }
 
 export const isTestKey = (env) => String(env.STRIPE_SECRET_KEY || "").startsWith("sk_test_");
+export const isLiveKey = (env) => /^(sk|rk)_live_/.test(String(env.STRIPE_SECRET_KEY || ""));
 
 /**
  * Verifica a assinatura do webhook.

@@ -11,7 +11,7 @@
  *   POST /api/quote                  -> formulário de plano personalizado -> e-mail para a equipe
  */
 import { PRICES, PLAN_NAMES, totalMinor } from "./prices.js";
-import { stripe, isTestKey, validSignature } from "./stripe-api.js";
+import { stripe, isTestKey, isLiveKey, validSignature } from "./stripe-api.js";
 import { sendPaidEmail, sendQuoteEmail } from "./email.js";
 import { json, clean, EMAIL_RE } from "./utils.js";
 
@@ -32,14 +32,26 @@ export default {
       return json({ error: "Not found" }, 404);
     } catch (err) {
       console.error(err?.stack || err);
-      return json({ error: "Something went wrong on our side. Please try again in a minute." }, 500);
+      // Em modo de teste (ou sem chave), mostra o motivo real para facilitar a configuração.
+      // Com a chave real (sk_live_) o cliente vê só a mensagem genérica.
+      const detail = !isLiveKey(env) ? ` [${err?.message || err}]` : "";
+      return json({ error: "Something went wrong on our side. Please try again in a minute." + detail }, 500);
     }
   },
 };
 
 /* ---------------- config pública ---------------- */
 function config(env) {
+  const key = String(env.STRIPE_SECRET_KEY || "");
   return json({
+    // "setup" ajuda a conferir a configuração sem expor nenhuma chave
+    setup: {
+      stripeKey: !key ? "FALTANDO" : key.startsWith("sk_test_") ? "ok (teste)" : key.startsWith("sk_live_") ? "ok (real)"
+        : key.startsWith("pk_") ? "ERRADA: essa é a chave pública (pk_), use a secreta (sk_)" : key.startsWith("rk_") ? "ok (restrita)" : "ERRADA: não parece uma chave da Stripe",
+      webhookSecret: !env.STRIPE_WEBHOOK_SECRET ? "FALTANDO" : String(env.STRIPE_WEBHOOK_SECRET).startsWith("whsec_") ? "ok" : "ERRADA: deve começar com whsec_",
+      resendKey: !env.RESEND_API_KEY ? "FALTANDO" : String(env.RESEND_API_KEY).startsWith("re_") ? "ok" : "ERRADA: deve começar com re_",
+      teamEmail: env.TEAM_EMAIL || "FALTANDO",
+    },
     testMode: isTestKey(env),
     bookingUrl: env.BOOKING_URL || "",
     contactEmail: env.CONTACT_EMAIL || "",
