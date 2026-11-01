@@ -9,10 +9,11 @@
  *   GET  /api/order-status?id=       -> status de um pagamento (usado quando o cliente volta da Stripe)
  *   POST /api/webhook                -> Stripe avisa pagamento concluído -> e-mail para a equipe
  *   POST /api/quote                  -> formulário de plano personalizado -> e-mail para a equipe
+ *   POST /api/contact                -> mensagem do "Contact us" -> e-mail para a equipe
  */
 import { PRICES, PLAN_NAMES, totalMinor } from "./prices.js";
 import { stripe, isTestKey, isLiveKey, validSignature } from "./stripe-api.js";
-import { sendPaidEmail, sendQuoteEmail } from "./email.js";
+import { sendPaidEmail, sendQuoteEmail, sendContactEmail } from "./email.js";
 import { json, clean, EMAIL_RE } from "./utils.js";
 
 export default {
@@ -26,6 +27,7 @@ export default {
         case "GET /api/order-status": return await orderStatus(url, env);
         case "POST /api/webhook":     return await webhook(request, env, ctx);
         case "POST /api/quote":       return await quote(request, env);
+        case "POST /api/contact":     return await contact(request, env);
       }
       // Qualquer outra coisa: arquivos do site (ou 404)
       if (env.ASSETS) return env.ASSETS.fetch(request);
@@ -146,6 +148,21 @@ async function webhook(request, env, ctx) {
 
   ctx.waitUntil(sendPaidEmail(session, env, isTestKey(env)).catch((e) => console.error("email", e)));
   return json({ received: true });
+}
+
+/* ---------------- mensagem do Contact us ---------------- */
+async function contact(request, env) {
+  const b = await request.json().catch(() => null);
+  if (!b) return json({ error: "Invalid request." }, 400);
+  if (b.mg_trap) { console.log("contact: honeypot preenchido, ignorado"); return json({ ok: true }); }
+  const d = {
+    name: clean(b.name, 120), email: clean(b.email, 160), phone: clean(b.phone, 40),
+    message: String(b.message ?? "").replace(/\r/g, "").trim().slice(0, 4000),
+    region: b.region === "us" ? "EUA" : "UK",
+  };
+  if (!d.name || !EMAIL_RE.test(d.email) || !d.message) return json({ error: "Add your name, a valid email and your message." }, 400);
+  await sendContactEmail(d, env);
+  return json({ ok: true });
 }
 
 /* ---------------- orçamento personalizado ---------------- */

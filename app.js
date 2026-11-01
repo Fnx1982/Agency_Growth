@@ -4,7 +4,7 @@
  */
 import { PRICES, PLAN_NAMES, DISCOUNTS, totalMinor, fullMinor } from "./prices.js";
 import { INCLUDED, COMPARE, SERVICES, LEGAL, CONTACT, BADGES } from "./content.js";
-import { DIAL, TOP, EXAMPLES } from "./countries.js";
+import { DIAL, TOP, EXAMPLES, FORMATS, TRUNK_ZERO } from "./countries.js";
 
 /* ---------------- utilitários ---------------- */
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -91,38 +91,75 @@ function renderStatic() {
   $("#wa-number").textContent = CONTACT.whatsappNumber;
 }
 
-/* ---------------- telefone com código do país ---------------- */
-let ccTouched = false;
-function renderPhoneCountries() {
+/* ---------------- telefone com código do país (formata enquanto digita) ---------------- */
+let countryOptions = "";
+function countryOptionsHtml() {
+  if (countryOptions) return countryOptions;
   let names;
   try { names = new Intl.DisplayNames(["en"], { type: "region" }); } catch (_) { names = { of: (c) => c }; }
   const opt = (c) => `<option value="${c}">${esc(names.of(c) || c)} (+${DIAL[c]})</option>`;
   const rest = Object.keys(DIAL).filter((c) => !TOP.includes(c)).sort((a, b) => (names.of(a) || a).localeCompare(names.of(b) || b));
-  $("#q-cc").innerHTML = TOP.map(opt).join("") + '<option disabled>──────────</option>' + rest.map(opt).join("");
-  $("#q-cc").addEventListener("change", () => { ccTouched = true; updatePhonePlaceholder(); });
-  syncPhoneCountry();
+  return (countryOptions = TOP.map(opt).join("") + "<option disabled>──────────</option>" + rest.map(opt).join(""));
 }
-function syncPhoneCountry() {
-  if (ccTouched || !$("#q-cc")) return;
-  $("#q-cc").value = state.region === "us" ? "US" : "GB";
-  updatePhonePlaceholder();
+
+/** Aplica o formato do país aos dígitos. Ex.: BR "11912345678" → "(11) 9 1234-5678". */
+function formatPhone(country, digits) {
+  const masks = FORMATS[country];
+  if (!digits) return "";
+  if (!masks) { // padrão: últimos 4 dígitos juntos, o resto em grupos de 3 (ex.: 901 234 5678)
+    if (digits.length < 7) return digits;
+    const head = digits.slice(0, -4).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    return head + " " + digits.slice(-4);
+  }
+  const fit = masks.find((m) => (m.match(/0/g) || []).length === digits.length)
+    || masks.find((m) => (m.match(/0/g) || []).length >= digits.length) || masks[masks.length - 1];
+  let out = "", i = 0;
+  for (const ch of fit) {
+    if (i >= digits.length) break;
+    if (ch === "0") out += digits[i++];
+    else out += ch;
+  }
+  return out + (i < digits.length ? " " + digits.slice(i) : ""); // dígitos a mais ficam no fim
 }
-function updatePhonePlaceholder() {
-  const c = $("#q-cc").value;
-  $("#q-phone").placeholder = EXAMPLES[c] || "Phone number";
+
+/** Liga um seletor de país + campo de telefone. Usado no formulário Custom e no Contact us. */
+function phoneWidget(select, input) {
+  let touched = false;
+  select.innerHTML = countryOptionsHtml();
+  const digitsOf = () => {
+    let d = input.value.replace(/\D/g, "");
+    if (TRUNK_ZERO.includes(select.value)) d = d.replace(/^0+/, ""); // 07400 → 7400
+    return d.slice(0, 15);
+  };
+  const reformat = () => { input.value = formatPhone(select.value, digitsOf()); };
+  const placeholder = () => { input.placeholder = EXAMPLES[select.value] || "Phone number"; };
+  input.addEventListener("input", reformat);
+  select.addEventListener("change", () => { touched = true; placeholder(); reformat(); });
+  const w = {
+    sync() { if (!touched) { select.value = state.region === "us" ? "US" : "GB"; placeholder(); reformat(); } },
+    full() { const d = digitsOf(); return d ? `+${DIAL[select.value]} ${input.value}` : ""; },
+    valid() { const d = digitsOf(); return !d || (d.length >= 6 && d.length <= 15); },
+    reset() { input.value = ""; },
+  };
+  w.sync();
+  return w;
 }
-function fullPhone() {
-  const num = $("#q-phone").value.replace(/[^\d]/g, "").replace(/^0+/, ""); // tira espaços e o 0 inicial (ex.: 07400 → 7400)
-  return num ? `+${DIAL[$("#q-cc").value]} ${num}` : "";
+let quotePhone, contactPhone;
+function renderPhoneCountries() {
+  quotePhone = phoneWidget($("#q-cc"), $("#q-phone"));
+  contactPhone = phoneWidget($("#c-cc"), $("#c-phone"));
 }
+function syncPhoneCountry() { quotePhone?.sync(); contactPhone?.sync(); }
 
 function applyConfig() {
   if (config.contactEmail) {
     const a = $("#contactmail");
     a.textContent = config.contactEmail;
     a.href = "mailto:" + config.contactEmail;
-    $("#mail-main").href = "mailto:" + config.contactEmail;
-    $("#mail-label").textContent = config.contactEmail;
+    const [user, domain] = config.contactEmail.split("@");
+    $("#mail-label").innerHTML = domain ? `${esc(user)}<wbr>@${esc(domain)}` : esc(config.contactEmail); // quebra antes do @
+    $("#c-mailto").href = "mailto:" + config.contactEmail;
+    $("#c-mailto").textContent = config.contactEmail;
   }
 }
 
@@ -284,8 +321,7 @@ $("#quoteform").addEventListener("submit", async (e) => {
   const btn = f.querySelector("button[type=submit]");
   note.className = "note err";
   if (!validate(f)) { note.textContent = "Add your name, business and a valid email so we can reply."; return; }
-  const digits = $("#q-phone").value.replace(/\D/g, "");
-  if (digits && (digits.length < 6 || digits.length > 15)) {
+  if (!quotePhone.valid()) {
     $("#q-phone").setAttribute("aria-invalid", "true"); $("#q-phone").focus();
     note.textContent = "Check the phone number, or leave it blank."; return;
   }
@@ -295,7 +331,7 @@ $("#quoteform").addEventListener("submit", async (e) => {
   try {
     await postJSON("/api/quote", {
       region: state.region, name: f.name.value, business: f.business.value, email: f.email.value,
-      phone: fullPhone(), website: f.website.value, message: f.message.value, mg_trap: f.mg_trap.value,
+      phone: quotePhone.full(), website: f.website.value, message: f.message.value, mg_trap: f.mg_trap.value,
       services: $$("input[name=services]:checked", f).map((i) => i.value),
     });
     f.reset();
@@ -306,6 +342,42 @@ $("#quoteform").addEventListener("submit", async (e) => {
   } finally {
     btn.disabled = false;
     btn.textContent = "Request a custom quote";
+  }
+});
+
+/* ---------------- Contact us: formulário de mensagem ---------------- */
+const contactDlg = $("#contactdlg");
+$("#mail-main").addEventListener("click", () => {
+  $("#c-done").hidden = true;
+  $("#contactform").hidden = false;
+  $("#cnote").textContent = "";
+  contactDlg.showModal();
+  setTimeout(() => $("#contactform input[name=name]").focus(), 50);
+});
+contactDlg.addEventListener("click", (e) => { if (e.target === contactDlg) contactDlg.close(); });
+$("#contactform").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const note = $("#cnote");
+  const btn = f.querySelector("button[type=submit]");
+  note.className = "note err";
+  if (!validate(f)) { note.textContent = "Add your name, a valid email and your message."; return; }
+  if (!contactPhone.valid()) { $("#c-phone").setAttribute("aria-invalid", "true"); note.textContent = "Check the phone number, or leave it blank."; return; }
+  btn.disabled = true;
+  btn.textContent = "Sending…";
+  try {
+    await postJSON("/api/contact", {
+      region: state.region, name: f.name.value, email: f.email.value, phone: contactPhone.full(),
+      message: f.message.value, mg_trap: f.mg_trap.value,
+    });
+    f.reset(); contactPhone.reset();
+    $("#contactform").hidden = true;
+    $("#c-done").hidden = false;
+  } catch (err) {
+    note.textContent = err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Send message";
   }
 });
 

@@ -245,7 +245,7 @@ dialog[open]{animation:pop .22s ease-out}
 .way{display:flex;align-items:center;gap:14px;padding:20px;border:1.5px solid var(--ink);border-radius:var(--r-lg);text-decoration:none;background:var(--panel);transition:background .15s}
 .way:hover{background:#fff}
 .way b{display:block;font-size:17px}
-.way small{display:block;color:var(--mute);font-size:14px;margin-top:2px;word-break:break-all}
+.way small{display:block;color:var(--mute);font-size:14px;margin-top:2px;overflow-wrap:anywhere}
 .way-wa{background:var(--ink);color:var(--on-ink)}
 .way-wa:hover{background:#222220}
 .way-wa small{color:var(--on-ink-mute)}
@@ -327,3 +327,10 @@ html{scroll-behavior:smooth}
 .phone-row{display:grid;grid-template-columns:minmax(0,220px) 1fr;gap:8px;margin-top:6px}
 .phone-row select,.phone-row input{margin-top:0}
 @media (max-width:560px){ .phone-row{grid-template-columns:1fr} }
+
+/* ===== Contact us: botão de mensagem + janela ===== */
+button.way{font:inherit;color:inherit;text-align:left;width:100%;cursor:pointer;appearance:none}
+button.way:focus-visible{outline:3px solid var(--signal);outline-offset:3px}
+#contactform textarea{min-height:120px}
+.opt{font-weight:400;color:var(--mute)}
+.fine a{color:inherit}

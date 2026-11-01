@@ -20,8 +20,26 @@ export const DIAL = {
 /** Países que aparecem primeiro na lista. */
 export const TOP = ["GB", "US", "IE", "CA", "AU", "BR", "PT"];
 
+/**
+ * FORMATOS de número por país: cada "0" é um dígito. Quando há duas opções, usa a que
+ * tiver a quantidade de dígitos igual à digitada (ex.: Brasil fixo x celular).
+ * Países fora da lista usam o formato padrão (grupos de 3).
+ */
+export const FORMATS = {
+  BR: ["(00) 0000-0000", "(00) 0 0000-0000"],
+  US: ["(000) 000-0000"], CA: ["(000) 000-0000"], PR: ["(000) 000-0000"], DO: ["(000) 000-0000"],
+  GB: ["0000 000000"], IE: ["00 000 0000"], AU: ["000 000 000"], NZ: ["00 000 0000"],
+  PT: ["000 000 000"], ES: ["000 00 00 00"], FR: ["0 00 00 00 00"], DE: ["0000 0000000"],
+  IT: ["000 000 0000"], NL: ["0 00000000"], BE: ["000 00 00 00"], CH: ["00 000 00 00"],
+  MX: ["00 0000 0000"], AR: ["00 0000 0000"], IN: ["00000 00000"], ZA: ["00 000 0000"],
+};
+
+/** Países em que a pessoa costuma digitar um 0 na frente que não vai no número internacional. */
+export const TRUNK_ZERO = ["GB", "IE", "AU", "NZ", "FR", "DE", "NL", "BE", "CH", "BR", "ZA", "IN", "TR", "JP", "KR", "CN"];
+
+/** Exemplo mostrado dentro do campo, no formato do país. */
 export const EXAMPLES = {
-  GB: "7400 123456", US: "201 555 0123", CA: "506 234 5678", IE: "85 012 3456", AU: "412 345 678",
-  NZ: "21 123 4567", BR: "11 91234 5678", PT: "912 345 678", ES: "612 34 56 78", FR: "6 12 34 56 78",
+  BR: "(11) 9 1234-5678", US: "(201) 555-0123", CA: "(506) 234-5678", GB: "7400 123456", IE: "85 012 3456",
+  AU: "412 345 678", NZ: "21 123 4567", PT: "912 345 678", ES: "612 34 56 78", FR: "6 12 34 56 78",
   DE: "1512 3456789", IT: "312 345 6789",
 };

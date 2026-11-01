@@ -117,3 +117,25 @@ export async function sendQuoteEmail(d, env) {
     ),
   });
 }
+
+/* ---------------- mensagem do Contact us ---------------- */
+export async function sendContactEmail(d, env) {
+  const first = d.name.split(" ")[0];
+  const replyBody = `Hi ${first}! This is the Molina Growth team. Thank you for your message. `;
+  const mailto = `mailto:${encodeURIComponent(d.email)}?subject=${encodeURIComponent("Re: your message to Molina Growth")}&body=${encodeURIComponent(replyBody)}`;
+  const phoneDigits = String(d.phone || "").replace(/\D/g, "");
+  const whatsapp = phoneDigits ? `https://wa.me/${phoneDigits}?text=${encodeURIComponent(replyBody)}` : "";
+
+  await sendMail(env, {
+    reply_to: d.email,
+    subject: `Mensagem pelo site (${d.region}): ${d.name}`,
+    html: wrap(
+      '<h2 style="margin:0 0 6px">Nova mensagem pelo site</h2>' +
+      '<p style="margin:0 0 18px;color:#555">Enviada pelo botão "Send us a message" do Contact us.</p>' +
+      button(mailto, "Responder por e-mail", true) +
+      (whatsapp ? button(whatsapp, "Chamar no WhatsApp") : "") +
+      table([["Região", d.region], ["Nome", d.name], ["E-mail", d.email], ["Telefone", d.phone]], 120) +
+      `<p style="margin:16px 0 4px;color:#555">Mensagem:</p><p style="white-space:pre-wrap;margin:0">${h(d.message)}</p>`,
+    ),
+  });
+}
