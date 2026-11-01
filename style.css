@@ -282,7 +282,7 @@ dialog[open]{animation:pop .22s ease-out}
 .plan-custom:hover{border-color:var(--on-ink)}
 .plan-custom:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
 .plan-custom b{display:block;font-size:18px;font-variation-settings:var(--wide)}
-.plan-custom span{font-weight:400;font-size:13px;opacity:.75}
+.plan-custom span{display:block;font-weight:400;font-size:13px;opacity:.75}
 html{scroll-behavior:smooth}
 #custom,#compare,#contact{scroll-margin-top:16px}
 
