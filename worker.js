@@ -81,7 +81,8 @@ async function createCheckout(request, env, url) {
       locale: "en",
       success_url: `${site}/?paid={CHECKOUT_SESSION_ID}`,
       cancel_url: `${site}/?cancelled=1`,
-      payment_method_types: ["card"],
+      // As formas de pagamento (cartão, Apple Pay, Google Pay) são escolhidas no painel da Stripe:
+      // Settings > Payment methods. Pix e boleto não aparecem porque só funcionam em reais (BRL).
       billing_address_collection: "required",
       phone_number_collection: { enabled: true },
       submit_type: "pay",
