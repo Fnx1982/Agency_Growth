@@ -16,12 +16,13 @@ enabled = true
 # Variáveis NÃO secretas. As secretas (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, RESEND_API_KEY)
 # vão no painel da Cloudflare: Worker > Settings > Variables and Secrets > tipo Secret.
 [vars]
-# Sem domínio próprio o Resend só envia deste remetente, e só para o e-mail da sua conta Resend:
-MAIL_FROM = "Molina Growth <onboarding@resend.dev>"
-# TEM que ser o mesmo e-mail com que você criou a conta no Resend:
+# Remetente dos e-mails (domínio verificado no Resend):
+MAIL_FROM = "Molina Growth <hello@molinagrowthagency.com>"
+# Quem recebe os avisos da equipe (pode ser mais de um, separado por vírgula):
 TEAM_EMAIL = "molinagrowthagency@gmail.com"
-# E-mail que aparece no site para os clientes:
-CONTACT_EMAIL = "molinagrowthagency@gmail.com"
+# E-mail que aparece no site e para onde vão as respostas dos clientes
+# (o Email Routing da Cloudflare encaminha para o Gmail):
+CONTACT_EMAIL = "hello@molinagrowthagency.com"
 
 # Tarefa diária (12:00 UTC): cancela planos mensais com parcela em aberto há 90 dias.
 [triggers]

@@ -61,6 +61,7 @@ function config(env) {
       webhookSecret: !env.STRIPE_WEBHOOK_SECRET ? "FALTANDO" : String(env.STRIPE_WEBHOOK_SECRET).startsWith("whsec_") ? "ok" : "ERRADA: deve começar com whsec_",
       resendKey: !env.RESEND_API_KEY ? "FALTANDO" : String(env.RESEND_API_KEY).startsWith("re_") ? "ok" : "ERRADA: deve começar com re_",
       teamEmail: env.TEAM_EMAIL || "FALTANDO",
+      mailFrom: env.MAIL_FROM || "onboarding@resend.dev (padrão)",
     },
     testMode: isTestKey(env),
     contactEmail: env.CONTACT_EMAIL || "",
@@ -219,7 +220,7 @@ async function webhook(request, env, url) {
       if (obj.mode === "subscription" && obj.subscription) {
         endsAt = await scheduleEnd(env, obj.subscription, Number(obj.metadata?.months || 0));
       }
-      await sendPaidEmail(obj, env, { test, site, endsAt });
+      await sendPaidEmail(obj, env, { test, site, endsAt, key: evt.id });
       return json({ received: true });
     }
 
@@ -231,7 +232,7 @@ async function webhook(request, env, url) {
       if (!since) {
         // primeira falha: marca a data para contar os 3 meses
         await stripe(env, "/subscriptions/" + subId, { method: "POST", params: { metadata: { unpaid_since: String(Math.floor(Date.now() / 1000)) } } });
-        await sendSubscriptionEmail("failed", sub, env, { test, site, invoice: obj });
+        await sendSubscriptionEmail("failed", sub, env, { test, site, invoice: obj, key: evt.id });
       }
       return json({ received: true });
     }
@@ -242,9 +243,9 @@ async function webhook(request, env, url) {
       const sub = await stripe(env, "/subscriptions/" + subId);
       if (Number(sub.metadata?.unpaid_since || 0)) {
         await stripe(env, "/subscriptions/" + subId, { method: "POST", params: { metadata: { unpaid_since: "" } } });
-        await sendSubscriptionEmail("recovered", sub, env, { test, site, invoice: obj });
+        await sendSubscriptionEmail("recovered", sub, env, { test, site, invoice: obj, key: evt.id });
       } else {
-        await sendSubscriptionEmail("installment", sub, env, { test, site, invoice: obj });
+        await sendSubscriptionEmail("installment", sub, env, { test, site, invoice: obj, key: evt.id });
       }
       return json({ received: true });
     }
@@ -253,7 +254,7 @@ async function webhook(request, env, url) {
       const m = obj.metadata || {};
       if (m.cancel_reason === "nonpayment") return json({ received: true }); // e-mail já enviado pela tarefa diária
       const endedOnSchedule = obj.cancel_at && obj.canceled_at && Math.abs(obj.canceled_at - obj.cancel_at) < 3 * 86400;
-      await sendSubscriptionEmail(endedOnSchedule ? "completed" : "cancelled", obj, env, { test, site });
+      await sendSubscriptionEmail(endedOnSchedule ? "completed" : "cancelled", obj, env, { test, site, key: evt.id });
       return json({ received: true });
     }
   }
@@ -298,7 +299,7 @@ async function cancelLongUnpaid(env) {
       if (!since || now - since < limit) continue;
       await stripe(env, "/subscriptions/" + sub.id, { method: "POST", params: { metadata: { cancel_reason: "nonpayment" } } });
       await stripe(env, "/subscriptions/" + sub.id, { method: "DELETE" });
-      await sendSubscriptionEmail("cancelled_nonpayment", sub, env, { test: isTestKey(env) });
+      await sendSubscriptionEmail("cancelled_nonpayment", sub, env, { test: isTestKey(env), key: "nonpay:" + sub.id });
       console.log("cron: assinatura cancelada por falta de pagamento", sub.id);
     }
   }

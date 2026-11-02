@@ -1,26 +1,49 @@
 /**
- * E-mails para a EQUIPE, enviados pelo Resend (https://resend.com).
+ * E-mails enviados pelo Resend (https://resend.com), remetente MAIL_FROM (hello@molinagrowthagency.com).
  *
- * Sem domínio próprio, o Resend só envia a partir de onboarding@resend.dev e SOMENTE para o
- * e-mail com que você criou a conta no Resend. Por isso TEAM_EMAIL tem que ser esse e-mail.
- * O recibo do CLIENTE é enviado pela própria Stripe (ative em Configurações > E-mails de clientes).
+ * Para a EQUIPE (TEAM_EMAIL, em português): pagamento recebido, parcela paga/falhou, cancelamentos,
+ *   pedidos de plano personalizado e mensagens do Contact us.
+ * Para o CLIENTE (em inglês): boas-vindas com o link do contrato assinado, aviso de parcela não paga
+ *   (serviço pausado), pagamento regularizado, plano concluído e cancelamento por falta de pagamento.
+ *   O recibo com o valor continua sendo enviado pela própria Stripe.
+ *
+ * Os formulários (Custom e Contact us) NÃO mandam e-mail automático para quem preencheu: qualquer
+ * pessoa poderia digitar o e-mail de outra e usar o site para mandar spam, o que queima o domínio.
  */
 import { PLAN_NAMES } from "./prices.js";
 import { planTerms } from "./plan-terms.js";
-import { h, fmt } from "./utils.js";
+import { h, fmt, EMAIL_RE } from "./utils.js";
 
 /* ---------------- envio ---------------- */
-export async function sendMail(env, msg) {
+/**
+ * Envia um e-mail. Sem "to", vai para a equipe (TEAM_EMAIL).
+ * "key" evita e-mail duplicado quando a Stripe reenvia o mesmo aviso (o Resend ignora a repetição por 24h).
+ */
+export async function sendMail(env, { to, key, ...msg }) {
   if (!env.RESEND_API_KEY) throw new Error("RESEND_API_KEY não configurada");
-  const to = teamList(env);
-  if (!to.length) throw new Error("TEAM_EMAIL não configurado");
+  const list = to ? [].concat(to) : teamList(env);
+  if (!list.length) throw new Error("TEAM_EMAIL não configurado");
+  const headers = { Authorization: "Bearer " + env.RESEND_API_KEY, "Content-Type": "application/json" };
+  if (key) headers["Idempotency-Key"] = String(key).slice(0, 256);
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: { Authorization: "Bearer " + env.RESEND_API_KEY, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: env.MAIL_FROM || "Molina Growth <onboarding@resend.dev>", to, ...msg }),
+    headers,
+    body: JSON.stringify({ from: env.MAIL_FROM || "Molina Growth <onboarding@resend.dev>", to: list, ...msg }),
   });
   if (!res.ok) throw new Error("Resend " + res.status + ": " + (await res.text()));
 }
+
+/** E-mail para o cliente: se falhar, só registra no log (não pode travar o aviso da equipe). */
+async function toClient(env, email, msg) {
+  if (!email || !EMAIL_RE.test(email)) return;
+  try {
+    await sendMail(env, { to: email, reply_to: replyTo(env), ...msg });
+  } catch (e) {
+    console.error("e-mail do cliente falhou", email, e?.message || e);
+  }
+}
+
+const replyTo = (env) => env.REPLY_TO || env.CONTACT_EMAIL || teamList(env)[0];
 
 export const teamList = (env) => String(env.TEAM_EMAIL || "").split(",").map((s) => s.trim()).filter(Boolean);
 
@@ -38,7 +61,15 @@ const table = (rows, labelWidth = 140) =>
     `<td style="padding:8px;border-bottom:1px solid #ddd"><b>${h(v || "-")}</b></td></tr>`).join("") +
   "</table>";
 
+/** Layout dos e-mails para o cliente: logo, conteúdo e rodapé com contato. */
+const clientWrap = (test, inner) => wrap(
+  (test ? '<p style="background:#fff3cd;padding:8px 12px;border-radius:4px">TEST payment, no real money was charged.</p>' : "") +
+  '<p style="margin:0 0 18px;font-weight:700;letter-spacing:.02em">MOLINA GROWTH</p>' + inner +
+  '<p style="margin:26px 0 0;padding-top:14px;border-top:1px solid #ddd;color:#555;font-size:13px">' +
+  "Questions? Just reply to this email.<br>Molina Growth Agency · molinagrowthagency.com</p>");
+
 /* ---------------- ajudantes ---------------- */
+const fmtDateEn = (iso) => (iso ? new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }) : "-");
 const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "-");
 const testBanner = (test) => (test ? '<p style="background:#fff3cd;padding:8px 12px;border-radius:4px">Pagamento de TESTE, nenhum dinheiro real.</p>' : "");
 const planLabel = (m) => `${PLAN_NAMES[m.plan] || m.plan}, ${m.months} ${m.months === "1" ? "month" : "months"}`;
@@ -61,7 +92,7 @@ function clientRows(m) {
 }
 
 /* ---------------- pagamento concluído (à vista ou 1ª parcela) ---------------- */
-export async function sendPaidEmail(session, env, { test, site, endsAt }) {
+export async function sendPaidEmail(session, env, { test, site, endsAt, key }) {
   const m = session.metadata || {};
   const monthly = m.billing === "monthly";
   const amount = fmt(session.amount_total, String(session.currency || "").toUpperCase());
@@ -76,6 +107,7 @@ export async function sendPaidEmail(session, env, { test, site, endsAt }) {
   const dashboard = `https://dashboard.stripe.com/${test ? "test/" : ""}${monthly ? "subscriptions/" + (session.subscription || "") : "payments/" + (session.payment_intent || "")}`;
 
   await sendMail(env, {
+    key: key && key + ":team",
     reply_to: m.email || undefined,
     subject: `${test ? "[TESTE] " : ""}Pagamento recebido: ${plan} ${regionLabel(m)}, ${monthly ? "1ª parcela " : ""}${amount} (${m.legal_name || m.rep_name})`,
     html: wrap(
@@ -96,10 +128,32 @@ export async function sendPaidEmail(session, env, { test, site, endsAt }) {
       ]),
     ),
   });
+
+  // Cliente: boas-vindas + contrato assinado
+  await toClient(env, m.email, {
+    key: key && key + ":client",
+    subject: `${test ? "[TEST] " : ""}Welcome to Molina Growth: your ${plan} plan`,
+    html: clientWrap(test,
+      `<h2 style="margin:0 0 10px">Thank you, ${h(firstName(m))}</h2>` +
+      `<p style="margin:0 0 14px">Your payment for the <b>${h(plan)}</b> plan has been received. ` +
+      `A copy of the agreement you signed is available at the link below. You can save it as a PDF from that page.</p>` +
+      button(agreementUrl, "View your signed agreement", true) +
+      table([
+        ["Plan", `${plan} (${m.region === "us" ? "USA" : "UK"})`],
+        ["Payment", monthly ? `Monthly: ${t.price}` : `Upfront: ${t.price}`],
+        ...(monthly ? [["Last payment", `${m.months} monthly payments, ending ${fmtDateEn(endsAt)}`]] : []),
+        ["Business", m.legal_name],
+        ["Signed by", `${m.sig_name || "-"}, ${m.accepted_at ? new Date(m.accepted_at).toUTCString() : "-"}`],
+        ["Reference", session.id],
+      ], 120) +
+      `<h3 style="margin:22px 0 6px">What happens next</h3>` +
+      `<p style="margin:0">Within one business day we'll contact you on WhatsApp or email with a short step-by-step guide ` +
+      `to give us access to your Google Ads and/or Meta Ads accounts. A payment receipt is sent separately by Stripe.</p>`),
+  });
 }
 
 /* ---------------- avisos do plano mensal ---------------- */
-export async function sendSubscriptionEmail(kind, sub, env, { test, invoice } = {}) {
+export async function sendSubscriptionEmail(kind, sub, env, { test, invoice, key } = {}) {
   const m = sub.metadata || {};
   const plan = planLabel(m);
   const amount = invoice ? fmt(invoice.amount_due ?? invoice.amount_paid ?? 0, String(invoice.currency || "").toUpperCase()) : "";
@@ -150,6 +204,7 @@ export async function sendSubscriptionEmail(kind, sub, env, { test, invoice } = 
   if (!K) return;
 
   await sendMail(env, {
+    key: key && key + ":team",
     reply_to: m.email || undefined,
     subject: `${test ? "[TESTE] " : ""}${K.subject}`,
     html: wrap(
@@ -161,6 +216,15 @@ export async function sendSubscriptionEmail(kind, sub, env, { test, invoice } = 
       table([["Plano", `${plan} (${regionLabel(m)}), mensal`], ...clientRows(m), ["Assinatura", sub.id]]),
     ),
   });
+
+  // Cliente: só nos casos que mudam algo para ele (falhou, regularizou, terminou, cancelado por falta de pagamento)
+  if (K.reply && kind !== "cancelled") {
+    await toClient(env, m.email, {
+      key: key && key + ":client",
+      subject: `${test ? "[TEST] " : ""}${K.reply[0]}`,
+      html: clientWrap(test, `<p style="margin:0 0 14px">${h(K.reply[1])}</p>`),
+    });
+  }
 }
 
 /* ---------------- pedido de orçamento ---------------- */
